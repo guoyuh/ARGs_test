@@ -13,16 +13,16 @@ bowtie2_bin=/mnt/project/tools/bowtie2-2.4.4/bowtie2
 salmon_card_index=/mnt/home/huanggy/CARD/localDB/card.salmon
 human_database_index=/mnt/db/kneaddata/human_genome/hg37dec_v0.1
 
-#sample=21JS944016
-#outdir=/mnt/home/huanggy/project/20220610_amr
-#input_single=/mnt/home/huanggy/raw_fq/2022-03/HZ200A015_20220317/21JS944016-1DL-DH-UDB-125_UDB-125.fq.gz
 
 mkdir -p ${outdir}/result/${sample}/filter
 mkdir -p ${outdir}/result/${sample}/amr
 
+##############################filter low quality & replicate############################################
 ${fastp} -i ${input_single} --dedup  --length_required 50 -q 15 -u 40 --thread 8 --json  ${outdir}/result/${sample}/filter/${sample}.json --html  ${outdir}/result/${sample}/filter/${sample}.html -o ${outdir}/result/${sample}/filter/${sample}.clean.fq.gz
 echo $?
 echo 'filter finished'
+
+##############################remove host####################################################
 ${bowtie2_bin} --mm --very-sensitive \
     -x ${human_database_index} \
     -U ${outdir}/result/${sample}/filter/${sample}.clean.fq.gz \
@@ -36,5 +36,5 @@ echo 'hostremove finished'
 ####################################基于耐药基因比对############################################
 /mnt/project/tools/seqtk/seqtk seq -a ${outdir}/result/${sample}/filter/${sample}.filter.fq > ${outdir}/result/${sample}/filter/${sample}.filter.fa
 /mnt/project/tools/ncbi-blast-2.12.0+/bin/blastn -query ${outdir}/result/${sample}/filter/${sample}.filter.fa -out ${outdir}/result/${sample}/filter/${sample}.blastm6.xls -outfmt 6 -num_threads 20  -evalue 1e-10 -db ~/CARD/blastDB/card.nucl
-python  ~/idseq_wkf/tmp/blastm6_stat.py -b  ${outdir}/result/${sample}/filter/${sample}.blastm6.xls  -p ${sample}
-python  ~/idseq_wkf/tmp/blastm6_anno.py  ~/CARD/localDB/card_3.2.3.gff3  ${outdir}/result/${sample}/filter/${sample}.blastm6.stat.xls
+python  ./blastm6_stat.py -b  ${outdir}/result/${sample}/filter/${sample}.blastm6.xls  -p ${sample}
+python  ./blastm6_anno.py  ../DB/card_3.2.3.gff3  ${outdir}/result/${sample}/filter/${sample}.blastm6.stat.xls
